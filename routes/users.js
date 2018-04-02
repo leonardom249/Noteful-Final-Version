@@ -27,7 +27,7 @@ router.post('/users', (req, res, next)=>{
     field => field in req.body && typeof req.body[field] !== 'string'
   );
 
-  if( nonStringField){
+  if(nonStringField){
     return res.status(422).json({
       code:422,
       reason: 'ValidationError',
@@ -35,23 +35,53 @@ router.post('/users', (req, res, next)=>{
       location: nonStringField
     });
   }
+
+  //No White Spaces Allowed:
+  const fieldsTrimmed = ['username', 'password'];
+  const findNonTrimmedFields = fieldsTrimmed.find(field => req.body[field].trim() !==req.body[field]);
+
+  if(findNonTrimmedFields){
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: 'Cannot start or end with whitespace',
+      location: findNonTrimmedFields
+    });
+  }
+
+  //Must Be A Certain Size:
+  const fieldSizes = {
+    username: {min:1},
+    password: {min:8, max:72}
+  };
+
+  const tooSmallField = Object.keys(fieldSizes).find(
+    field =>
+      'min' in fieldSizes[field] &&
+            req.body[field].trim().length < fieldSizes[field].min
+  );
+
+  const tooLargeField = Object.keys(fieldSizes).find(
+    field =>
+      'max' in fieldSizes[field] &&
+                req.body[field].trim().length > fieldSizes[field].max
+  );
+  if (tooSmallField || tooLargeField) {
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: tooSmallField
+        ? `Must be at least ${fieldSizes[tooSmallField]
+          .min} characters long`
+        : `Must be at most ${fieldSizes[tooLargeField]
+          .max} characters long`,
+      location: tooSmallField || tooLargeField
+    });
+  }
+
   //Create it then:
   let {username, password, fullName=''} = req.body;
-
-  //   return User.find({username}).count()
-  //     .then(count=>{
-  //       if(count>0){
-  //         return Promise.reject({
-  //           code: 422,
-  //           reason: 'ValidationError',
-  //           message: 'Username already taken',
-  //           location: 'username'
-  //         });  
-  //       }
-  //     })
-  //     .then(()=>{
   return User.hashPassword(password)
-    // })
     .then(digest => {
       const newUser = {
         username,
