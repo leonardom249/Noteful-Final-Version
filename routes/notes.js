@@ -68,7 +68,7 @@ router.get('/notes/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/notes', (req, res, next) => {
-  const { title, content, folderId, tags } = req.body;
+  let { title, content, folderId=null, tags } = req.body;
 
   /***** Never trust users - validate input *****/
   if (!title) {
@@ -86,6 +86,12 @@ router.post('/notes', (req, res, next) => {
       }
     });
   }
+
+  console.log(folderId);
+  if (!folderId){
+    folderId = null;
+  }
+  console.log(folderId);
 
   const newItem = { title, content, folderId, tags };
 

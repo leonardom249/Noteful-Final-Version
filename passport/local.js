@@ -12,8 +12,8 @@ const localStrategy = new LocalStrategy ((username, password, done) => {
       if(!user){
         return Promise.reject({
           reason: 'LoginError',
-          message: 'Incorrect Username',
-          location: username
+          message: 'Incorrect Username or Password',
+          //location: 'username'
         });
       }
       return user.validatePassword(password);
@@ -22,8 +22,8 @@ const localStrategy = new LocalStrategy ((username, password, done) => {
       if(!validate){
         return Promise.reject({
           reason: 'LoginError',
-          message: 'Incorrect Password',
-          location: password,
+          message: 'Incorrect Username or Password',
+          //location: 'password',
         });
       }
       return done(null,user);

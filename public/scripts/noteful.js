@@ -14,12 +14,13 @@ const noteful = (function () {
     el.text(message).show();
     setTimeout(() => el.fadeOut('slow'), 3000);
   }
+  //what is this doing? ^^ Mentor help
 
   function handleErrors(err) {
-    // if (err.status === 401) {
-    // store.authorized = false;
-    // noteful.render();
-    // }
+    if (err.status === 401) {
+      store.authorized = false;
+      noteful.render();
+    }
     showFailureMessage(err.responseJSON.message);
   }
 
@@ -396,10 +397,11 @@ const noteful = (function () {
 
       api.create('/api/login', loginUser)
         .then(response => {
+          store.authToken = response.authToken;
           store.authorized = true;
           loginForm[0].reset();
 
-          store.currentUser = response;
+          // store.currentUser = response;
 
           return Promise.all([
             api.search('/api/notes'),
@@ -416,6 +418,7 @@ const noteful = (function () {
         .catch(handleErrors);
     });
   }
+
 
   function bindEventListeners() {
     handleNoteItemClick();
@@ -434,6 +437,7 @@ const noteful = (function () {
 
     handleSignupSubmit();
     handleLoginSubmit();
+    handleErrors();
   }
 
   // This object contains the only exposed methods from this module:
