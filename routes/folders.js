@@ -8,8 +8,14 @@ const mongoose = require('mongoose');
 const Folder = require('../models/folder');
 const Note = require('../models/note');
 
+const app = express();
+const passport = require('passport');
+
+const jwtAuth = app.use(passport.authenticate('jwt', { session: false, failWithError: true }));
+
+
 /* ========== GET/READ ALL ITEMS ========== */
-router.get('/folders', (req, res, next) => {
+router.get('/folders', jwtAuth, (req, res, next) => {
   Folder.find()
     .sort('name')
     .then(results => {
@@ -21,7 +27,7 @@ router.get('/folders', (req, res, next) => {
 });
 
 /* ========== GET/READ A SINGLE ITEM ========== */
-router.get('/folders/:id', (req, res, next) => {
+router.get('/folders/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -44,7 +50,7 @@ router.get('/folders/:id', (req, res, next) => {
 });
 
 /* ========== POST/CREATE AN ITEM ========== */
-router.post('/folders', (req, res, next) => {
+router.post('/folders', jwtAuth, (req, res, next) => {
   const { name } = req.body;
 
   const newFolder = { name };
@@ -70,7 +76,7 @@ router.post('/folders', (req, res, next) => {
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
-router.put('/folders/:id', (req, res, next) => {
+router.put('/folders/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
 
@@ -107,7 +113,7 @@ router.put('/folders/:id', (req, res, next) => {
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
-router.delete('/folders/:id', (req, res, next) => {
+router.delete('/folders/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
 
   // Manual "cascading" delete to ensure integrity

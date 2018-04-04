@@ -4,11 +4,16 @@ const express = require('express');
 const router = express.Router();
 
 const mongoose = require('mongoose');
-
 const Note = require('../models/note');
 
+const app = express();
+const passport = require('passport');
+
+const jwtAuth = app.use(passport.authenticate('jwt', { session: false, failWithError: true }));
+
+
 /* ========== GET/READ ALL ITEMS ========== */
-router.get('/notes', (req, res, next) => {
+router.get('/notes', jwtAuth, (req, res, next) => {
   const { searchTerm, folderId, tagId } = req.query;
 
   let filter = {};
@@ -43,7 +48,7 @@ router.get('/notes', (req, res, next) => {
 });
 
 /* ========== GET/READ A SINGLE ITEM ========== */
-router.get('/notes/:id', (req, res, next) => {
+router.get('/notes/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -67,7 +72,7 @@ router.get('/notes/:id', (req, res, next) => {
 });
 
 /* ========== POST/CREATE AN ITEM ========== */
-router.post('/notes', (req, res, next) => {
+router.post('/notes', jwtAuth, (req, res, next) => {
   let { title, content, folderId=null, tags } = req.body;
 
   /***** Never trust users - validate input *****/
@@ -105,10 +110,11 @@ router.post('/notes', (req, res, next) => {
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
-router.put('/notes/:id', (req, res, next) => {
+router.put('/notes/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
   const { title, content, folderId, tags } = req.body;
-
+  const updateItem = { title, content, tags };
+  const options = { new: true };
   /***** Never trust users - validate input *****/
   if (!title) {
     const err = new Error('Missing `title` in request body');
@@ -137,10 +143,9 @@ router.put('/notes/:id', (req, res, next) => {
   }
 
 
-  const updateItem = { title, content, tags };
-  const options = { new: true };
 
-  Note.findByIdAndUpdate(id, updateItem, options)
+
+  Note.findByIdAndUpdate(id, updateItem)
     .populate('tags')
     .then(result => {
       if (result) {
@@ -155,7 +160,7 @@ router.put('/notes/:id', (req, res, next) => {
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
-router.delete('/notes/:id', (req, res, next) => {
+router.delete('/notes/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
 
   Note.findByIdAndRemove(id)

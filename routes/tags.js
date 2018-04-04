@@ -8,8 +8,13 @@ const mongoose = require('mongoose');
 const Tag = require('../models/tag');
 const Note = require('../models/note');
 
+const app = express();
+const passport = require('passport');
+
+const jwtAuth = app.use(passport.authenticate('jwt', { session: false, failWithError: true }));
+
 /* ========== GET/READ ALL ITEMS ========== */
-router.get('/tags', (req, res, next) => {
+router.get('/tags', jwtAuth, (req, res, next) => {
   Tag.find()
     .sort('name')
     .then(results => {
@@ -21,7 +26,7 @@ router.get('/tags', (req, res, next) => {
 });
 
 /* ========== GET/READ A SINGLE ITEM ========== */
-router.get('/tags/:id', (req, res, next) => {
+router.get('/tags/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -44,7 +49,7 @@ router.get('/tags/:id', (req, res, next) => {
 });
 
 /* ========== POST/CREATE AN ITEM ========== */
-router.post('/tags', (req, res, next) => {
+router.post('/tags', jwtAuth, (req, res, next) => {
   const { name } = req.body;
 
   const newTag = { name };
@@ -70,7 +75,7 @@ router.post('/tags', (req, res, next) => {
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
-router.put('/tags/:id', (req, res, next) => {
+router.put('/tags/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
 
@@ -107,7 +112,7 @@ router.put('/tags/:id', (req, res, next) => {
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
-router.delete('/tags/:id', (req, res, next) => {
+router.delete('/tags/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
   const tagRemovePromise = Tag.findByIdAndRemove(id);
   // const tagRemovePromise = Tag.remove({ _id: id }); // NOTE **underscore** _id

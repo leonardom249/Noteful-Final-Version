@@ -41,7 +41,6 @@ passport.use(jwtStrategy);
 app.use('/api', usersRouter);
 app.use('/api', authRouter);
 
-app.use(passport.authenticate('jwt', { session: false, failWithError: true }));
 app.use('/api', notesRouter);
 app.use('/api', foldersRouter);
 app.use('/api', tagsRouter);
