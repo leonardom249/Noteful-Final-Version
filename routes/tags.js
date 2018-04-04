@@ -15,7 +15,9 @@ const jwtAuth = app.use(passport.authenticate('jwt', { session: false, failWithE
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/tags', jwtAuth, (req, res, next) => {
-  Tag.find()
+  const userId = req.user.id;
+  const filter = {userId};
+  Tag.find(filter)
     .sort('name')
     .then(results => {
       res.json(results);
@@ -28,6 +30,7 @@ router.get('/tags', jwtAuth, (req, res, next) => {
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/tags/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -35,7 +38,7 @@ router.get('/tags/:id', jwtAuth, (req, res, next) => {
     return next(err);
   }
 
-  Tag.findById(id)
+  Tag.findOne({_id:id, userId})
     .then(result => {
       if (result) {
         res.json(result);
@@ -51,8 +54,9 @@ router.get('/tags/:id', jwtAuth, (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/tags', jwtAuth, (req, res, next) => {
   const { name } = req.body;
+  const userId = req.user.id;
 
-  const newTag = { name };
+  const newTag = { name, userId };
 
   /***** Never trust users - validate input *****/
   if (!name) {
@@ -78,6 +82,7 @@ router.post('/tags', jwtAuth, (req, res, next) => {
 router.put('/tags/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
+  const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
   if (!name) {
@@ -92,9 +97,9 @@ router.put('/tags/:id', jwtAuth, (req, res, next) => {
     return next(err);
   }
 
-  const updateTag = { name };
+  const updateTag = { name, userId };
 
-  Tag.findByIdAndUpdate(id, updateTag, { new: true })
+  Tag.findOneAndUpdate({_id:id, userId}, updateTag, { new: true })
     .then(result => {
       if (result) {
         res.json(result);
@@ -114,7 +119,9 @@ router.put('/tags/:id', jwtAuth, (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/tags/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
-  const tagRemovePromise = Tag.findByIdAndRemove(id);
+  const userId = req.user.id;
+
+  const tagRemovePromise = Tag.findOneAndRemove({_id:id, userId});
   // const tagRemovePromise = Tag.remove({ _id: id }); // NOTE **underscore** _id
 
   const noteUpdatePromise = Note.updateMany(

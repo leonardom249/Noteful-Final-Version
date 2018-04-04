@@ -5,6 +5,9 @@ const router = express.Router();
 
 const mongoose = require('mongoose');
 const Note = require('../models/note');
+const Tag = require('../models/tag');
+const Folder = require('../models/folder');
+
 
 const app = express();
 const passport = require('passport');
@@ -12,11 +15,37 @@ const passport = require('passport');
 const jwtAuth = app.use(passport.authenticate('jwt', { session: false, failWithError: true }));
 
 
+const validateTagUser = function (userId, tags = []){
+  if(tags.length > 0){
+    Tag.find({$and : {_id: {$in:tags}, userId}})
+      .then(result =>{
+        if(tags.length !== result.length){
+          return Promise.reject('Invalid tag');
+        }
+      });
+  }
+  else{
+    Promise.resolve();
+  }
+};
+
+const validateFolderUser = function (userId, folderId){
+  if(!folderId){
+    return Promise.resolve();
+  }
+  return Folder.findOne({_id:folderId, userId})
+    .then(result => {
+      if(!result){
+        return Promise.reject('Invalid Folder');
+      }
+    });
+};
+
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/notes', jwtAuth, (req, res, next) => {
   const { searchTerm, folderId, tagId } = req.query;
-
-  let filter = {};
+  const userId = req.user.id;
+  let filter = {userId};
 
   /**
    * BONUS CHALLENGE - Search both title and content using $OR Operator
@@ -50,6 +79,7 @@ router.get('/notes', jwtAuth, (req, res, next) => {
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/notes/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -57,7 +87,7 @@ router.get('/notes/:id', jwtAuth, (req, res, next) => {
     return next(err);
   }
 
-  Note.findById(id)
+  Note.findOne({_id:id, userId})
     .populate('tags')
     .then(result => {
       if (result) {
@@ -74,6 +104,11 @@ router.get('/notes/:id', jwtAuth, (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/notes', jwtAuth, (req, res, next) => {
   let { title, content, folderId=null, tags } = req.body;
+  const userId = req.user.id;
+  const newItem = { title, content, folderId, tags, userId };
+  const valFolderIdProm = validateFolderUser(userId, folderId);
+  const valTagIdsProm = validateTagUser(userId, tags);
+
 
   /***** Never trust users - validate input *****/
   if (!title) {
@@ -92,19 +127,26 @@ router.post('/notes', jwtAuth, (req, res, next) => {
     });
   }
 
-  console.log(folderId);
+
   if (!folderId){
     folderId = null;
   }
-  console.log(folderId);
 
-  const newItem = { title, content, folderId, tags };
 
-  Note.create(newItem)
+  Promise.all([valFolderIdProm, valTagIdsProm])
+    .then(()=> Note.create(newItem))
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
     .catch(err => {
+      if(err ==='Invalid Folder'){
+        err = new Error('The folder is invalid');
+        err.status = 400;
+      }
+      if(err ==='Invalid Tag'){
+        err = new Error('The tag is invalid');
+        err.status = 400;
+      }
       next(err);
     });
 });
@@ -113,8 +155,11 @@ router.post('/notes', jwtAuth, (req, res, next) => {
 router.put('/notes/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
   const { title, content, folderId, tags } = req.body;
-  const updateItem = { title, content, tags };
+  const userId = req.user.id;
+  const updateItem = { title, content, folderId, tags };
   const options = { new: true };
+  const valFolderIdProm = validateFolderUser(userId, folderId);
+  const valTagIdsProm = validateTagUser(userId, tags);
   /***** Never trust users - validate input *****/
   if (!title) {
     const err = new Error('Missing `title` in request body');
@@ -144,9 +189,9 @@ router.put('/notes/:id', jwtAuth, (req, res, next) => {
 
 
 
-
-  Note.findByIdAndUpdate(id, updateItem)
-    .populate('tags')
+  Promise.all([valFolderIdProm,valTagIdsProm])
+    .then(()=> Note.findOneAndUpdate({_id:id, userId}, updateItem, options)
+      .populate('tags'))
     .then(result => {
       if (result) {
         res.json(result);
@@ -155,6 +200,14 @@ router.put('/notes/:id', jwtAuth, (req, res, next) => {
       }
     })
     .catch(err => {
+      if(err === 'Invalid Folder'){
+        err = new Error('The folder is not valid');
+        err.status = 400;
+      }
+      if(err === 'Invalid Tag'){
+        err = new Error('The tag is not valid');
+        err.status= 400;
+      }
       next(err);
     });
 });
@@ -162,10 +215,16 @@ router.put('/notes/:id', jwtAuth, (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/notes/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
-  Note.findByIdAndRemove(id)
-    .then(() => {
-      res.status(204).end();
+  Note.findOneAndRemove({_id:id, userId})
+    .then((result) => {
+      if(result){
+        res.status(204).end();
+      }
+      else{
+        next();
+      }
     })
     .catch(err => {
       next(err);
