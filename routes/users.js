@@ -22,7 +22,7 @@ router.post('/users', (req, res, next)=>{
   }
 
   //Check that the incoming are strings:
-  const strings = ['username', 'password', 'fullName'];
+  const strings = ['username', 'password', 'fullname'];
   const nonStringField = strings.find(
     field => field in req.body && typeof req.body[field] !== 'string'
   );
@@ -80,13 +80,15 @@ router.post('/users', (req, res, next)=>{
   }
 
   //Create it then:
-  let {username, password, fullName=''} = req.body;
+  let {username, password, fullname=''} = req.body;
+  fullname = fullname.trim();
+
   return User.hashPassword(password)
     .then(digest => {
       const newUser = {
         username,
         password: digest,
-        fullName
+        fullname
       };
       return User.create(newUser);
     })

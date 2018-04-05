@@ -10,15 +10,18 @@
 	"main": "server.js",
 	"scripts": {
 		"start": "node server.js",
-		"test": "cross-env NODE_ENV=test mocha --exit"
+		"test": "cross-env NODE_ENV=test mocha --timeout 5000 --exit",
+		"cover": "nyc --reporter=lcov --reporter=text-summary npm test"
 	},
 	"dependencies": {
 		"bcryptjs": "^2.4.3",
+		"cover": "^0.2.9",
 		"dotenv": "^5.0.1",
 		"express": "^4.16.2",
 		"jsonwebtoken": "^8.2.0",
 		"mongoose": "^5.0.6",
 		"morgan": "^1.9.0",
+		"nyc": "^11.6.0",
 		"passport": "^0.4.0",
 		"passport-jwt": "^4.0.0",
 		"passport-local": "^1.0.0"

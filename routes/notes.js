@@ -17,7 +17,7 @@ const jwtAuth = app.use(passport.authenticate('jwt', { session: false, failWithE
 
 const validateTagUser = function (userId, tags = []){
   if(tags.length > 0){
-    Tag.find({$and : {_id: {$in:tags}, userId}})
+    return Tag.find({$and : [{_id: {$in:tags}, userId}]})
       .then(result =>{
         if(tags.length !== result.length){
           return Promise.reject('Invalid tag');
@@ -106,8 +106,7 @@ router.post('/notes', jwtAuth, (req, res, next) => {
   let { title, content, folderId=null, tags } = req.body;
   const userId = req.user.id;
   const newItem = { title, content, folderId, tags, userId };
-  const valFolderIdProm = validateFolderUser(userId, folderId);
-  const valTagIdsProm = validateTagUser(userId, tags);
+  
 
 
   /***** Never trust users - validate input *****/
@@ -132,6 +131,8 @@ router.post('/notes', jwtAuth, (req, res, next) => {
     folderId = null;
   }
 
+  const valFolderIdProm = validateFolderUser(userId, folderId);
+  const valTagIdsProm = validateTagUser(userId, tags);
 
   Promise.all([valFolderIdProm, valTagIdsProm])
     .then(()=> Note.create(newItem))
