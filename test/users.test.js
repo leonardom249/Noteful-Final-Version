@@ -7,7 +7,6 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
 const { TEST_MONGODB_URI } = require('../config'); 
-// ('../config'); whats this for? <<<
 
 const User = require('../models/user');
 
@@ -15,7 +14,7 @@ const expect = chai.expect;
 
 chai.use(chaiHttp);
 
-describe.only('Noteful API - Users', function () {
+describe('Noteful API - Users', function () {
   const username = 'exampleUser';
   const password = 'examplePass';
   const fullname = 'Example User';
@@ -227,7 +226,7 @@ describe.only('Noteful API - Users', function () {
           });
 
       });
-      it.only('Should trim fullname', function(){
+      it('Should trim fullname', function(){
         const newUser = {username, password, fullname:' Megan '};
         let res;
         return chai.request(app).post('/api/users').send(newUser)
