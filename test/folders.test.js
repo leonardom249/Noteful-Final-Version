@@ -17,7 +17,7 @@ const { JWT_SECRET } = require('../config');
 const expect = chai.expect;
 chai.use(chaiHttp);
 
-describe.only('Noteful API - Folders', function () {
+describe('Noteful API - Folders', function () {
   let user;
   let token;
 
@@ -293,7 +293,7 @@ describe.only('Noteful API - Folders', function () {
 
   describe('DELETE /api/folders/:id', function () {
 
-    it.only('should delete an item by id', function () {
+    it('should delete an item by id', function () {
       return Folder.findOne({userId: user.id}).select('id name userId')
         .then(data => {
           return chai.request(app).delete(`/api/folders/${data.id}`)
