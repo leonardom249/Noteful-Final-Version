@@ -103,7 +103,7 @@ router.get('/notes/:id', jwtAuth, (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/notes', jwtAuth, (req, res, next) => {
-  let { title, content, folderId=null, tags } = req.body;
+  let { title, content, folderId, tags } = req.body;
   const userId = req.user.id;
   const newItem = { title, content, folderId, tags, userId };
   
@@ -157,7 +157,7 @@ router.put('/notes/:id', jwtAuth, (req, res, next) => {
   const { id } = req.params;
   const { title, content, folderId, tags } = req.body;
   const userId = req.user.id;
-  const updateItem = { title, content, folderId, tags };
+  const updateItem = { title, content, tags };
   const options = { new: true };
   const valFolderIdProm = validateFolderUser(userId, folderId);
   const valTagIdsProm = validateTagUser(userId, tags);
@@ -172,6 +172,10 @@ router.put('/notes/:id', jwtAuth, (req, res, next) => {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
+  }
+
+  if (mongoose.Types.ObjectId.isValid(folderId)) {
+    updateItem.folderId = folderId;
   }
 
   if (mongoose.Types.ObjectId.isValid(folderId)) {
