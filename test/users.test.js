@@ -25,11 +25,13 @@ describe('Noteful API - Users', function () {
   });
 
   beforeEach(function () {
-    // noop
+    return User.ensureIndexes();
   });
 
   afterEach(function () {
-    return mongoose.connection.db.dropDatabase();
+    return User.remove();
+    // return User.collection.drop();
+    // return mongoose.connection.db.dropDatabase()
   });
 
   after(function () {
@@ -208,6 +210,7 @@ describe('Noteful API - Users', function () {
             expect(res.body.reason).to.equal('ValidationError');
           });
       });
+
       it('Should reject users with duplicate username', function(){
         const user1 = {username, password, fullname};
         const user2 = {username, password, fullname};
